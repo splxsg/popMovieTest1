@@ -1,3 +1,4 @@
+
 package com.example.blues.popmovietest1;
 
 import android.net.Uri;
@@ -16,15 +17,19 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+*/
 /**
  * Created by Blues on 23/03/2016.
- */
+ *//*
+
 public class FetchMovieGrid extends AsyncTask<String, Void, String> {
     private final String LOG_TAG = FetchMovieGrid.class.getSimpleName();
     private boolean sortChange = false; //cant use bool here, dont know why, and this is a flag to show if the sort type changed, if so, the adapter will go to the beginning
-        /* The date/time conversion code is going to be moved outside the asynctask later,
+        */
+/* The date/time conversion code is going to be moved outside the asynctask later,
 +         * so for convenience we're breaking it out into its own method now.
-+         */
++         *//*
+
         private String currentSort = perference.getCurrentsort();
 
     FragmentMovie.ImageAdapter Imageadapter;
@@ -176,3 +181,4 @@ public class FetchMovieGrid extends AsyncTask<String, Void, String> {
         }
     }
 }
+
