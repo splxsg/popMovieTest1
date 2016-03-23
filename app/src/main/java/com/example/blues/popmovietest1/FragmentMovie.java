@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -16,7 +17,6 @@ import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 
-import com.example.blues.popmovietest1.data.MovieContract;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONException;
@@ -25,53 +25,29 @@ import org.json.JSONObject;
 /**
  * Created by Blues on 11/24/2015.
  */
-public class FragmentMovie extends Fragment{ //implements LoaderManager.LoaderCallbacks<Cursor> {
+public class FragmentMovie extends Fragment {
     ImageAdapter movieImageAdapter;
     JSONObject[] movieJSONObject;
     View rootView;
     GridView movieGridView;
-    int moviePerPage;
-    String currentSort = "";
-
-    String pop_rank = "popularity";
-    String vot_ave_rank = "vote_average";
-    boolean Sortchange = false;
-    private static final int MOVIE_LOADER = 0;
-
-    public FragmentMovie() {}
-
-    private static final String[] MOVIE_COLUMNS = {
-            // In this case the id needs to be fully qualified with a table name, since
-            // the content provider joins the location & weather tables in the background
-            // (both have an _id column)
-            // On the one hand, that's annoying.  On the other, you can search the weather table
-            // using the location set by the user, which is only in the Location table.
-            // So the convenience is worth it.
-            MovieContract.MovieEntry.TABLE_NAME + "." + MovieContract.MovieEntry._ID,
-            MovieContract.MovieEntry.COLUMN_MOVIE_ID,
-            MovieContract.MovieEntry.COLUMN_MOVIE_NAME};
+    //int moviePerPage;
+   // String currentSort = "";
 
 
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-       // getLoaderManager().initLoader(MOVIE_LOADER, null, this);
-        super.onActivityCreated(savedInstanceState);
+
+
+    public FragmentMovie() {
+
     }
 
-   /* void onSortChanged()
-    {
-        getLoaderManager().restartLoader(MOVIE_LOADER, null, this);
-    }*/
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setHasOptionsMenu(true);
-        FetchMovieTask weatherTask = new FetchMovieTask();
 
-        weatherTask.execute(new String[]{pop_rank, "1"});
-        currentSort = pop_rank;
+
 
 
     }
@@ -88,23 +64,18 @@ public class FragmentMovie extends Fragment{ //implements LoaderManager.LoaderCa
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_pop) {
-            FetchMovieTask movieTask = new FetchMovieTask();
-            movieTask.execute(new String[]{pop_rank,"1"});
-            if(currentSort != pop_rank)
-                Sortchange = true;
-            currentSort = pop_rank;
-
+            FetchMovieGrid movieTask = new FetchMovieGrid(movieImageAdapter,movieGridView);
+            movieTask.execute(new String[]{"popularity","1"});
 
             return true;
         }
         if (id == R.id.action_re_date) {
-            FetchMovieTask movieTask = new FetchMovieTask();
-            movieTask.execute(new String[]{vot_ave_rank,"1"});
-            if(currentSort != vot_ave_rank)
-                Sortchange = true;
-            currentSort = vot_ave_rank;
+            FetchMovieGrid movieTask = new FetchMovieGrid(movieImageAdapter,movieGridView);
+            movieTask.execute(new String[]{"vote_average","1"});
+
             return true;
         }
+
 
         return super.onOptionsItemSelected(item);
     }
@@ -117,11 +88,21 @@ public class FragmentMovie extends Fragment{ //implements LoaderManager.LoaderCa
 
         rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
-        movieJSONObject = null;
+
+
         movieImageAdapter = new ImageAdapter(getActivity());
+        //movieImageAdapter.setJSON(movieJSONObject);
+
+        movieJSONObject = null;
+
         movieGridView = (GridView) rootView.findViewById(R.id.movie_gridView);
+
         movieGridView.setAdapter(movieImageAdapter);
 
+        //FetchMovieGrid movieTask = new FetchMovieGrid(movieImageAdapter,movieGridView);
+
+        //perference.setCurrentsort("popularity");
+        //movieTask.execute(new String[]{"popularity", "1"});
 
         movieGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -141,43 +122,17 @@ public class FragmentMovie extends Fragment{ //implements LoaderManager.LoaderCa
         return rootView;
     }
 
-
-    /*@Override
-    public Loader<Cursor>  onCreateLoader(int i, Bundle bundle) {
-        String csort = perference.getCurrentsort();
-
-        // Sort order:  Ascending, by date.
-        String sortOrder = MovieContract.MovieEntry.COLUMN_MOVIE_ID + " ASC";
-        Uri MovieUri = MovieContract.MovieEntry.buildMovieInfo();
-        return new CursorLoader(getActivity(),
-                MovieUri,
-                MOVIE_COLUMNS,
-                null,
-                null,
-                sortOrder);
-    }*/
-
-
-   /* @Override
-    public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor)
-    {
-            movieGridView.setAdapter(movieImageAdapter);  //if the sort type changed by menu, gridview goes to top
-    }
-
-
-    @Override
-    public void onLoaderReset(Loader<Cursor> cursorLoader) {
-        movieGridView.setAdapter(null);
-    }
-
-*/
-    private class ImageAdapter extends BaseAdapter {
+    public class ImageAdapter extends BaseAdapter {
         private Context mContext;
         private final String LOG_TAG = "ImageAdapter";
-
+        //private JSONObject[] movieJSONObject;
+        private String currentSort = perference.getCurrentsort();
+        private int moviePerPage = perference.getMoviePerPage();
         public ImageAdapter(Context context) {
-            mContext = context;
+            this.mContext = context;
+
         }
+
 
 
 
@@ -185,7 +140,7 @@ public class FragmentMovie extends Fragment{ //implements LoaderManager.LoaderCa
         @Override
         public int getCount() {
             if(movieJSONObject != null)
-           return movieJSONObject.length;
+                return movieJSONObject.length;
             else
                 return 0;
         }
@@ -195,10 +150,12 @@ public class FragmentMovie extends Fragment{ //implements LoaderManager.LoaderCa
             String s = null;
             if(movieJSONObject != null)
             {try {
+
                 s = getPosterUri(movieJSONObject[position].getString("poster_path")).toString();
+
             } catch (JSONException e) {
             }
-            return s;}
+                return s;}
             else
                 return null;
         }
@@ -235,18 +192,22 @@ public class FragmentMovie extends Fragment{ //implements LoaderManager.LoaderCa
 
             if(position == getCount()-3)
             {
-               FetchMovieTask movieTask = new FetchMovieTask();
+                FetchMovieGrid movieTask = new FetchMovieGrid(movieImageAdapter,movieGridView);
                 movieTask.execute(currentSort, getCount()/moviePerPage+1+"");
             }
 
 
 
+            Log.v("Gridview",currentSort);
+            try{Log.v("Gridview",getPosterUri(movieJSONObject[position].getString("poster_path")).toString());}
+            catch (JSONException e) {
+            }
 
-                String s = getItem(position);
-              Picasso.with(getActivity())
-                        .load(s)
-                        .placeholder(R.raw.placeholder)
-                        .into(imageView);
+            String s = getItem(position);
+            Picasso.with(mContext)
+                    .load(s)
+                    .placeholder(R.raw.placeholder)
+                    .into(imageView);
             return imageView;
 
         }
@@ -264,8 +225,4 @@ public class FragmentMovie extends Fragment{ //implements LoaderManager.LoaderCa
 
 
 
-
-
-
 }
-

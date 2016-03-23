@@ -3,6 +3,7 @@ package com.example.blues.popmovietest1;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.widget.GridView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -16,20 +17,28 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 /**
- * Created by Blues on 22/03/2016.
+ * Created by Blues on 23/03/2016.
  */
-public class FetchMovieTask extends AsyncTask<String, Void, String> {
-    private final String LOG_TAG = FetchMovieTask.class.getSimpleName();
-    /* The date/time conversion code is going to be moved outside the asynctask later,
+public class FetchMovieGrid extends AsyncTask<String, Void, String> {
+    private final String LOG_TAG = FetchMovieGrid.class.getSimpleName();
+    private boolean sortChange = false; //cant use bool here, dont know why, and this is a flag to show if the sort type changed, if so, the adapter will go to the beginning
+        /* The date/time conversion code is going to be moved outside the asynctask later,
 +         * so for convenience we're breaking it out into its own method now.
 +         */
-    JSONObject[] movieJSONObject;
-    int moviePerPage;
-    private boolean sortChange = false; //cant use bool here, dont know why, and this is a flag to show if the sort type changed, if so, the adapter will go to the beginning
+        private String currentSort = perference.getCurrentsort();
+
+    FragmentMovie.ImageAdapter Imageadapter;
+    GridView movieGridView;
+    private JSONObject[] movieJSONObject;
+    public FetchMovieGrid(FragmentMovie.ImageAdapter imageadapter, GridView mMovieGridView)
+    {
+        this.Imageadapter = imageadapter;
+        this.movieGridView = mMovieGridView;
+    }
 
     private void UpdatemovieJSONObject(String JSONstr)
             throws JSONException {
-
+        int moviePerPage;
         try {
             JSONObject jsonobject = new JSONObject(JSONstr);
             JSONObject[] tempjsonobject;
@@ -38,21 +47,23 @@ public class FetchMovieTask extends AsyncTask<String, Void, String> {
 
             JSONArray jsonarray = new JSONObject(JSONstr).getJSONArray(js_RESULT);
 
-            if (movieJSONObject == null) {             //if app just start or request a new sort method, movieJSONObject will be initial
+            if(movieJSONObject == null) {             //if app just start or request a new sort method, movieJSONObject will be initial
                 moviePerPage = jsonarray.length();
+                perference.setMoviePerPage(moviePerPage);
                 movieJSONObject = new JSONObject[jsonarray.length()];
                 for (int i = 0; i < jsonarray.length(); i++)
                     movieJSONObject[i] = jsonarray.getJSONObject(i);
-            } else                                                    //To list more content under the same sort method
+            }
+            else                                                    //To list more content under the same sort method
             {
                 int original_length = movieJSONObject.length;
                 tempjsonobject = movieJSONObject;              //assign temp space for swapping
-                movieJSONObject = new JSONObject[jsonarray.length() + original_length];   //enlarge size of movieJSONObject
+                movieJSONObject = new JSONObject[jsonarray.length()+original_length];   //enlarge size of movieJSONObject
                 for (int i = 0; i < original_length; i++) {
                     movieJSONObject[i] = tempjsonobject[i];       //put original data back
                 }
                 for (int i = 0; i < jsonarray.length(); i++)       //assign new data to movieJSONObject
-                    movieJSONObject[i + original_length] = jsonarray.getJSONObject(i);
+                    movieJSONObject[i+original_length] = jsonarray.getJSONObject(i);
             }
         } catch (JSONException e) {
             Log.e(LOG_TAG, "Error ", e);
@@ -61,12 +72,16 @@ public class FetchMovieTask extends AsyncTask<String, Void, String> {
     }
 
 
+
     @Override
     protected String doInBackground(String[] params) {
-        Log.v(LOG_TAG, "PARAMS LENGTH " + params.length);
+        Log.v(LOG_TAG,"PARAMS LENGTH "+params.length);
         if (params.length == 0) {
             return null;
         }
+        if(currentSort != params[0])
+            sortChange = true;
+        currentSort = params[0];
 
 
         // These two need to be declared outside the try/catch
@@ -139,17 +154,25 @@ public class FetchMovieTask extends AsyncTask<String, Void, String> {
                 }
             }
         }
-        if (params[1] == "1")  //if request the first page of sorting, it means we need to initial movieJSONObject
+        if(params[1]=="1")  //if request the first page of sorting, it means we need to initial movieJSONObject
             movieJSONObject = null;
-        try {
-            UpdatemovieJSONObject(MovieJsonStr);
-        } catch (JSONException e) {
-            Log.e("JSONE", "ERROR", e);
-        }
         return MovieJsonStr;
     }
 
     //this is going to happen after the JSON data obtained.
-
-
+    @Override
+    protected void onPostExecute(String result) {
+        Log.v(LOG_TAG, "JSON results" + result);
+        if (result != null) {
+            try {
+                //FragmentMovie.movieImageAdapter.setJSON(movieJSONObject);
+                UpdatemovieJSONObject(result);  //update the movie infomation to movieJSONObject and notify the adapter data has changed
+                Imageadapter.notifyDataSetChanged();
+                if(sortChange)
+                   movieGridView.setAdapter(Imageadapter);  //if the sort type changed by menu, gridview goes to top
+            } catch (JSONException e) {
+                Log.e(LOG_TAG, "Error ", e);
+            }
+        }
+    }
 }

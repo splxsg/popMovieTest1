@@ -24,8 +24,12 @@ public class MovieDbHelper extends SQLiteOpenHelper {
 
      final String SQL_CREATE_MOVIE_TABLE = "CREATE TABLE " + MovieEntry.TABLE_NAME + " (" +
              MovieEntry._ID + " INTEGER PRIMARY KEY," +
-             MovieEntry.COLUMN_MOVIE_ID + " INTEGER NOT NULL," +
-             MovieEntry.COLUMN_MOVIE_NAME + "TEXT UNIQUE NOT NULL" +
+             MovieEntry.COLUMN_MOVIE_ID + " TEXT NOT NULL," +
+             MovieEntry.COLUMN_MOVIE_NAME + "TEXT UNIQUE NOT NULL," +
+             MovieEntry.COLUMN_MOVIE_RELEASEDATE + " TEXT NOT NULL," +
+             MovieEntry.COLUMN_MOVIE_Rate + " TEXT NOT NULL," +
+             MovieEntry.COLUMN_MOVIE_synopsis + " TEXT NOT NULL," +
+             MovieEntry.COLUMN_MOVIE_favourite + " TEXT NOT NULL" +
              " );";
      sqLiteDatabase.execSQL(SQL_CREATE_MOVIE_TABLE);
      Log.v("MovieDBHelper","create! ");

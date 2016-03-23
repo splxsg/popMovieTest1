@@ -40,6 +40,13 @@
         />
 
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Fav"
+        android:id="@+id/Favbtn"
+        android:layout_gravity="right" />
+
     <LinearLayout
         android:layout_height="wrap_content"
         android:layout_width="match_parent"

@@ -37,7 +37,12 @@ public class MovieContract {
         public static final String TABLE_NAME = "movie";
 
         public static final String COLUMN_MOVIE_ID = "movie_id";
-        public static final String COLUMN_MOVIE_NAME = "movie_name";
+        public static final String COLUMN_MOVIE_NAME = "movie_title";
+        public static final String COLUMN_MOVIE_RELEASEDATE = "movie_release_date";
+        public static final String COLUMN_MOVIE_Rate = "movie_rate";
+        public static final String COLUMN_MOVIE_synopsis = "movie_synopsis";
+        public static final String COLUMN_MOVIE_favourite = "movie_favourite";
+
         /*// Column with the foreign key into the location table.
         public static final String COLUMN_LOC_KEY = "location_id";
         // Date, stored as long in milliseconds since the epoch
