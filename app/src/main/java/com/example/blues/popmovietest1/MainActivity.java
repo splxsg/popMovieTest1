@@ -7,13 +7,16 @@ import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
 
+    private String Currentsort;
+    private final String FRAGMENTMOVIE_TAG = "FMTAG";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Currentsort = perference.getCurrentsort();
         setContentView(R.layout.activity_main);
        if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new FragmentMovie())
+                    .add(R.id.container, new FragmentMovie(), FRAGMENTMOVIE_TAG)
                     .commit();
         }
 
@@ -40,5 +43,16 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        String csort = perference.getCurrentsort();
+        if (csort != Currentsort) {
+            FragmentMovie FM = (FragmentMovie) getSupportFragmentManager().findFragmentByTag(FRAGMENTMOVIE_TAG);
+            if(null != FM)
+                FM.onSortChanged();
+        }
     }
 }

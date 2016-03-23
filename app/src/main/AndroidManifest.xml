@@ -28,6 +28,9 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.example.blues.popmovietest1.MainActivity" />
         </activity>
+        <provider
+            android:authorities="com.example.blues.popmovietest1"
+            android:name=".data.MovieProvider" />
     </application>
 
 </manifest>

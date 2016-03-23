@@ -2,11 +2,13 @@ package com.example.blues.popmovietest1;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -18,23 +20,16 @@ import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 
+import com.example.blues.popmovietest1.data.MovieContract;
 import com.squareup.picasso.Picasso;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 /**
  * Created by Blues on 11/24/2015.
  */
-public class FragmentMovie extends Fragment {
+public class FragmentMovie extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
     ImageAdapter movieImageAdapter;
     JSONObject[] movieJSONObject;
     View rootView;
@@ -42,11 +37,35 @@ public class FragmentMovie extends Fragment {
     int moviePerPage;
     String currentSort = "";
 
+    String pop_rank = "popularity";
+    String vot_ave_rank = "vote_average";
+    boolean Sortchange = false;
+    private static final int MOVIE_LOADER = 0;
 
-    public FragmentMovie() {
+    public FragmentMovie() {}
 
+    private static final String[] MOVIE_COLUMNS = {
+            // In this case the id needs to be fully qualified with a table name, since
+            // the content provider joins the location & weather tables in the background
+            // (both have an _id column)
+            // On the one hand, that's annoying.  On the other, you can search the weather table
+            // using the location set by the user, which is only in the Location table.
+            // So the convenience is worth it.
+            MovieContract.MovieEntry.TABLE_NAME + "." + MovieContract.MovieEntry._ID,
+            MovieContract.MovieEntry.COLUMN_MOVIE_ID,
+            MovieContract.MovieEntry.COLUMN_MOVIE_NAME};
+
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        getLoaderManager().initLoader(MOVIE_LOADER, null, this);
+        super.onActivityCreated(savedInstanceState);
     }
 
+    void onSortChanged()
+    {
+        getLoaderManager().restartLoader(MOVIE_LOADER, null, this);
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -55,7 +74,9 @@ public class FragmentMovie extends Fragment {
         setHasOptionsMenu(true);
         FetchMovieTask weatherTask = new FetchMovieTask();
 
-        weatherTask.execute(new String[]{"popularity", "1"});
+        weatherTask.execute(new String[]{pop_rank, "1"});
+        currentSort = pop_rank;
+
 
     }
 
@@ -72,14 +93,20 @@ public class FragmentMovie extends Fragment {
         int id = item.getItemId();
         if (id == R.id.action_pop) {
             FetchMovieTask movieTask = new FetchMovieTask();
-            movieTask.execute(new String[]{"popularity","1"});
+            movieTask.execute(new String[]{pop_rank,"1"});
+            if(currentSort != pop_rank)
+                Sortchange = true;
+            currentSort = pop_rank;
+
 
             return true;
         }
         if (id == R.id.action_re_date) {
             FetchMovieTask movieTask = new FetchMovieTask();
-            movieTask.execute(new String[]{"vote_average","1"});
-
+            movieTask.execute(new String[]{vot_ave_rank,"1"});
+            if(currentSort != vot_ave_rank)
+                Sortchange = true;
+            currentSort = vot_ave_rank;
             return true;
         }
 
@@ -116,6 +143,35 @@ public class FragmentMovie extends Fragment {
 
 
         return rootView;
+    }
+
+
+    @Override
+    public Loader<Cursor>  onCreateLoader(int i, Bundle bundle) {
+        String csort = perference.getCurrentsort();
+
+        // Sort order:  Ascending, by date.
+        String sortOrder = MovieContract.MovieEntry.COLUMN_MOVIE_ID + " ASC";
+        Uri MovieUri = MovieContract.MovieEntry.buildMovieInfo();
+        return new CursorLoader(getActivity(),
+                MovieUri,
+                MOVIE_COLUMNS,
+                null,
+                null,
+                sortOrder);
+    }
+
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor)
+    {
+            movieGridView.setAdapter(movieImageAdapter);  //if the sort type changed by menu, gridview goes to top
+    }
+
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> cursorLoader) {
+        movieGridView.setAdapter(null);
     }
 
 
@@ -210,150 +266,10 @@ public class FragmentMovie extends Fragment {
 
 
 
-    public class FetchMovieTask extends AsyncTask<String, Void, String> {
-        private final String LOG_TAG = FetchMovieTask.class.getSimpleName();
-        private boolean sortChange = false; //cant use bool here, dont know why, and this is a flag to show if the sort type changed, if so, the adapter will go to the beginning
-        /* The date/time conversion code is going to be moved outside the asynctask later,
-+         * so for convenience we're breaking it out into its own method now.
-+         */
-
-        private void UpdatemovieJSONObject(String JSONstr)
-                throws JSONException {
-
-            try {
-                JSONObject jsonobject = new JSONObject(JSONstr);
-                JSONObject[] tempjsonobject;
-
-                final String js_RESULT = "results";
-
-                JSONArray jsonarray = new JSONObject(JSONstr).getJSONArray(js_RESULT);
-
-                if(movieJSONObject == null) {             //if app just start or request a new sort method, movieJSONObject will be initial
-                    moviePerPage = jsonarray.length();
-                    movieJSONObject = new JSONObject[jsonarray.length()];
-                    for (int i = 0; i < jsonarray.length(); i++)
-                        movieJSONObject[i] = jsonarray.getJSONObject(i);
-                }
-                else                                                    //To list more content under the same sort method
-                {
-                    int original_length = movieJSONObject.length;
-                    tempjsonobject = movieJSONObject;              //assign temp space for swapping
-                    movieJSONObject = new JSONObject[jsonarray.length()+original_length];   //enlarge size of movieJSONObject
-                    for (int i = 0; i < original_length; i++) {
-                        movieJSONObject[i] = tempjsonobject[i];       //put original data back
-                    }
-                    for (int i = 0; i < jsonarray.length(); i++)       //assign new data to movieJSONObject
-                        movieJSONObject[i+original_length] = jsonarray.getJSONObject(i);
-                }
-            } catch (JSONException e) {
-                Log.e(LOG_TAG, "Error ", e);
-            }
-
-        }
 
 
 
-        @Override
-        protected String doInBackground(String[] params) {
-           Log.v(LOG_TAG,"PARAMS LENGTH "+params.length);
-            if (params.length == 0) {
-                return null;
-            }
-            if(currentSort != params[0])
-                sortChange = true;
-            currentSort = params[0];
 
 
-            // These two need to be declared outside the try/catch
-            // so that they can be closed in the finally block.
-            HttpURLConnection urlConnection = null;
-            BufferedReader reader = null;
-
-            String MovieJsonStr = null;
-
-
-            try {
-                // Construct the URL for requesting data from themoviedb via legal API
-                final String MOVIE_DATABASE_URL = "http://api.themoviedb.org/3/discover/movie?";
-                final String SORT_PARAM = "sort_by";
-                final String Sort = params[0];
-                final String PAGE_PARAM = "page";
-                final String page = params[1];
-                final String Rank = ".desc";
-                final String APPID_PARAM = "api_key";
-                Uri builtUri = Uri.parse(MOVIE_DATABASE_URL).buildUpon()
-                        .appendQueryParameter(SORT_PARAM, Sort + Rank)
-                        .appendQueryParameter(PAGE_PARAM, page)
-                        .appendQueryParameter(APPID_PARAM, BuildConfig.MOVIE_DATABASE_API_KEY)
-                        .build();
-                URL url = new URL(builtUri.toString());
-
-                Log.v(LOG_TAG, "Built URI " + builtUri.toString());
-                // Create the request to themoviedb, and open the connection
-                urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setRequestMethod("GET");
-                urlConnection.connect();
-                // Read the input stream into a String
-                InputStream inputStream = urlConnection.getInputStream();
-                StringBuffer buffer = new StringBuffer();
-                if (inputStream == null) {
-                    // Nothing to do.
-                    return null;
-                }
-                reader = new BufferedReader(new InputStreamReader(inputStream));
-                MovieJsonStr = buffer.toString();
-
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    // Since it's JSON, adding a newline isn't necessary (it won't affect parsing)
-                    // But it does make debugging a *lot* easier if you print out the completed
-                    // buffer for debugging.
-                    buffer.append(line + "\n");
-                }
-
-                if (buffer.length() == 0) {
-                    // Stream was empty.  No point in parsing.
-                    return null;
-                }
-                MovieJsonStr = buffer.toString();
-                Log.v(LOG_TAG, "Movie JSON String: " + MovieJsonStr);
-            } catch (IOException e) {
-                Log.e(LOG_TAG, "Error ", e);
-                // If the code didn't successfully get the movie data, there's no point in attemping
-                // to parse it.
-                return null;
-            } finally {
-                if (urlConnection != null) {
-                    urlConnection.disconnect();
-                }
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (final IOException e) {
-                        Log.e(LOG_TAG, "Error closing stream", e);
-                    }
-                }
-            }
-           if(params[1]=="1")  //if request the first page of sorting, it means we need to initial movieJSONObject
-                movieJSONObject = null;
-            return MovieJsonStr;
-        }
-
-           //this is going to happen after the JSON data obtained.
-        @Override
-        protected void onPostExecute(String result) {
-            Log.v(LOG_TAG, "JSON results" + result);
-            if (result != null) {
-                try {
-                    UpdatemovieJSONObject(result);  //update the movie infomation to movieJSONObject and notify the adapter data has changed
-                    movieImageAdapter.notifyDataSetChanged();
-                    if(sortChange)
-                        movieGridView.setAdapter(movieImageAdapter);  //if the sort type changed by menu, gridview goes to top
-                } catch (JSONException e) {
-                    Log.e(LOG_TAG, "Error ", e);
-                }
-            }
-        }
-    }
 }
 
