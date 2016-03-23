@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
+   /* @Override
     protected void onResume() {
         super.onResume();
         String csort = perference.getCurrentsort();
@@ -54,5 +54,5 @@ public class MainActivity extends AppCompatActivity {
             if(null != FM)
                 FM.onSortChanged();
         }
-    }
+    }*/
 }

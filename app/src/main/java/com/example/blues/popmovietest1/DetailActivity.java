@@ -284,10 +284,7 @@ public class DetailActivity extends AppCompatActivity {
     public class FetchMovieReview extends AsyncTask<String, Void, String>{
         private final String LOG_TAG = FetchMovieReview.class.getSimpleName();
 
-        private final Context mContext;
-        public FetchMovieReview(Context context) {
-            mContext = context;
-        }
+
 
         private void MovieReviewJSONObject(String JSONstr)
                 throws JSONException {
@@ -312,7 +309,7 @@ public class DetailActivity extends AppCompatActivity {
 
         }
 
-        private void storeID()
+      /*  private void storeID()
         {
             Log.d("storeID", "1111111111");
             ContentValues movieValue = new ContentValues();
@@ -329,7 +326,7 @@ public class DetailActivity extends AppCompatActivity {
                 inserted = mContext.getContentResolver().bulkInsert(MovieContract.MovieEntry.CONTENT_URI,cvArray);
                 Log.d("intert SQL", "FetchWeatherTask Complete. " + inserted + " Inserted");
 
-        }
+        }*/
 
 
       @Override

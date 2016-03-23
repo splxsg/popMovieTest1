@@ -2,13 +2,9 @@ package com.example.blues.popmovietest1;
 
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -29,7 +25,7 @@ import org.json.JSONObject;
 /**
  * Created by Blues on 11/24/2015.
  */
-public class FragmentMovie extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+public class FragmentMovie extends Fragment{ //implements LoaderManager.LoaderCallbacks<Cursor> {
     ImageAdapter movieImageAdapter;
     JSONObject[] movieJSONObject;
     View rootView;
@@ -58,14 +54,14 @@ public class FragmentMovie extends Fragment implements LoaderManager.LoaderCallb
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
-        getLoaderManager().initLoader(MOVIE_LOADER, null, this);
+       // getLoaderManager().initLoader(MOVIE_LOADER, null, this);
         super.onActivityCreated(savedInstanceState);
     }
 
-    void onSortChanged()
+   /* void onSortChanged()
     {
         getLoaderManager().restartLoader(MOVIE_LOADER, null, this);
-    }
+    }*/
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -146,7 +142,7 @@ public class FragmentMovie extends Fragment implements LoaderManager.LoaderCallb
     }
 
 
-    @Override
+    /*@Override
     public Loader<Cursor>  onCreateLoader(int i, Bundle bundle) {
         String csort = perference.getCurrentsort();
 
@@ -159,10 +155,10 @@ public class FragmentMovie extends Fragment implements LoaderManager.LoaderCallb
                 null,
                 null,
                 sortOrder);
-    }
+    }*/
 
 
-    @Override
+   /* @Override
     public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor)
     {
             movieGridView.setAdapter(movieImageAdapter);  //if the sort type changed by menu, gridview goes to top
@@ -174,7 +170,7 @@ public class FragmentMovie extends Fragment implements LoaderManager.LoaderCallb
         movieGridView.setAdapter(null);
     }
 
-
+*/
     private class ImageAdapter extends BaseAdapter {
         private Context mContext;
         private final String LOG_TAG = "ImageAdapter";
