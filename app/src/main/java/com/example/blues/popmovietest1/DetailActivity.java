@@ -10,39 +10,42 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
 
 public class DetailActivity extends AppCompatActivity {
-   static private String JSONSTR;
+
+   static private String MovieID;
+    static private FetchMovieReview MovieReview;
+    static private FetchTrailer MovieTrailer;
+    static private FetchFavData FavData;
+    static private String JSONSTR;
+
+
+
+    public DetailActivity()
+    {}
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
-
-
-
-
-
-
       if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.container, new DetailFragment())
                     .commit();
         }
-
-
-
-
     }
+
+
 
         @Override
         public boolean onCreateOptionsMenu(Menu menu) {
@@ -67,58 +70,85 @@ public class DetailActivity extends AppCompatActivity {
         }
 
 
-
     public static class DetailFragment extends Fragment {
 
-        public DetailFragment() {
-        }
+
+
+        public DetailFragment(){}
+
+
+
+
+
+
+
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
 
-          //This is attempt to create custom adapter for display image, text detail information
-          /*  View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
-            LinearLayout linearlayout = (LinearLayout) rootView.findViewById(R.id.detaillist);
-            DetailInfoAdapter adapter = new DetailInfoAdapter(getActivity());
-            ImageView imageView = (ImageView) rootView.findViewById(R.id.detail_image);
-
-            Intent intent = getActivity().getIntent();
-                if (intent != null && intent.hasExtra(Intent.EXTRA_TEXT)) {
-                    JSONSTR = intent.getStringExtra(Intent.EXTRA_TEXT);
-                }
-            return rootView;*/
-
-            View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
 
 
-            Intent intent = getActivity().getIntent();
+            final View rootView;
+
+            rootView = inflater.inflate(R.layout.fragment_detail, container, false);
+            MovieReview = new FetchMovieReview(rootView);
+
+
             ImageView imageView = (ImageView)rootView.findViewById(R.id.detail_image);
+            Intent intent = getActivity().getIntent();
             if (intent != null && intent.hasExtra(Intent.EXTRA_TEXT)) {
-                String JSONSTR = intent.getStringExtra(Intent.EXTRA_TEXT);
+                JSONSTR = intent.getStringExtra(Intent.EXTRA_TEXT);
                try{
-                ((TextView) rootView.findViewById(R.id.detail_title)).setText("Title: " + getMovieInfo(JSONSTR, "original_title"));
-                   ((TextView) rootView.findViewById(R.id.detail_year)).setText("Release on: " + getMovieInfo(JSONSTR, "release_date"));
-                   ((TextView) rootView.findViewById(R.id.avg_rate)).setText("Rate: " + getMovieInfo(JSONSTR, "vote_average"));
-                   ((TextView) rootView.findViewById(R.id.detail_text)).setText("Title: " + getMovieInfo(JSONSTR, "original_title"));
+                   MovieID = perference.getMovieInfoFromJSON(JSONSTR,"id") ;
+                ((TextView) rootView.findViewById(R.id.detail_title)).setText("Title: " + perference.getMovieInfoFromJSON(JSONSTR, "original_title"));
+                   ((TextView) rootView.findViewById(R.id.detail_year)).setText("Release on: " + perference.getMovieInfoFromJSON(JSONSTR, "release_date"));
+                   ((TextView) rootView.findViewById(R.id.avg_rate)).setText("Rate: " + perference.getMovieInfoFromJSON(JSONSTR, "vote_average"));
+                ((TextView) rootView.findViewById(R.id.detail_text)).setText("Synopsis: " + perference.getMovieInfoFromJSON(JSONSTR, "overview"));
 
-                ((TextView) rootView.findViewById(R.id.detail_text)).setText("Synopsis: " + getMovieInfo(JSONSTR, "overview"));
                    Picasso.with(getActivity())
-                           .load(getPosterUri(getMovieInfo(JSONSTR, "poster_path")).toString())
+                           .load(getPosterUri(perference.getMovieInfoFromJSON(JSONSTR, "poster_path")).toString())
                            .into(imageView);
+
+
             }
                catch (JSONException e) {
                }}
+
+
+            MovieReview.execute(MovieID);
+
+            final Button trailerbtn = (Button) rootView.findViewById(R.id.trailer);
+            trailerbtn.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+
+                    MovieTrailer = new FetchTrailer(rootView,getActivity());
+                    MovieTrailer.execute(MovieID);
+
+
+                }
+            });
+
+            final Button favbtn = (Button) rootView.findViewById(R.id.Favbtn);
+            favbtn.setOnClickListener(new View.OnClickListener(){
+                public void onClick(View v)
+                {
+                    FavData = new FetchFavData(JSONSTR,getActivity());
+                    FavData.execute();
+                }
+            });
+
 
             return rootView;
 
 
         }
-        private String getMovieInfo(String JSONSTR, String info_name)
-                throws JSONException {
-            JSONObject MovieJson = new JSONObject(JSONSTR);
-            return MovieJson.getString(info_name);
-        }
+
+
+
+
+
+
 
         private Uri getPosterUri(String Poster_path)
         {
@@ -126,6 +156,8 @@ public class DetailActivity extends AppCompatActivity {
             Uri builtUri = Uri.parse(MOVIE_DATABASE_URL).buildUpon().build();
             return builtUri;
         }
+
+
 
 //This is attempt to create custom adapter for display image, text detail information
         /*private class DetailInfoAdapter extends BaseAdapter {
@@ -213,6 +245,13 @@ public class DetailActivity extends AppCompatActivity {
         }*/
 
     }
+
+
+
+
+
+
+
 
             }
 

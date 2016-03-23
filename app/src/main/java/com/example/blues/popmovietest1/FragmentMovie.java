@@ -71,14 +71,14 @@ public class FragmentMovie extends Fragment {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_pop) {
-            FetchMovieTask movieTask = new FetchMovieTask();
+          FetchMovieTask movieTask = new FetchMovieTask();
             movieTask.execute(new String[]{"popularity","1"});
 
             return true;
         }
         if (id == R.id.action_re_date) {
             FetchMovieTask movieTask = new FetchMovieTask();
-            movieTask.execute(new String[]{"vote_average","1"});
+           movieTask.execute(new String[]{"vote_average","1"});
 
             return true;
         }
@@ -99,13 +99,14 @@ public class FragmentMovie extends Fragment {
         movieGridView = (GridView) rootView.findViewById(R.id.movie_gridView);
         movieGridView.setAdapter(movieImageAdapter);
 
-
+        movieImageAdapter.notifyDataSetChanged();
         movieGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
                 final String LOG_TAG = "onItemClick_fragmentMovie";
 
-                String moviedata = movieJSONObject[position].toString();
+               // String moviedata = movieJSONObject[position].toString();
+                String moviedata = "test";
                 Intent intent = new Intent(getActivity(), DetailActivity.class)
                         .putExtra(Intent.EXTRA_TEXT, moviedata);
                 startActivity(intent);
@@ -133,22 +134,24 @@ public class FragmentMovie extends Fragment {
         @Override
         public int getCount() {
             if(movieJSONObject != null)
-           return movieJSONObject.length;
+                return movieJSONObject.length;
             else
-                return 0;
+               //return 0;
+                return 20;
         }
 
         @Override
         public String getItem(int position) {
-            String s = null;
+            return "/uXZYawqUsChGSj54wcuBtEdUJbh.jpg";
+           /* String s = null;
             if(movieJSONObject != null)
             {try {
                 s = getPosterUri(movieJSONObject[position].getString("poster_path")).toString();
             } catch (JSONException e) {
             }
-            return s;}
+                return s;}
             else
-                return null;
+                return null;*/
         }
 
         @Override
@@ -183,18 +186,18 @@ public class FragmentMovie extends Fragment {
 
             if(position == getCount()-3)
             {
-               FetchMovieTask movieTask = new FetchMovieTask();
-                movieTask.execute(currentSort, getCount()/moviePerPage+1+"");
+             //   FetchMovieTask movieTask = new FetchMovieTask();
+               // movieTask.execute(currentSort, getCount()/moviePerPage+1+"");
             }
 
 
 
 
-                String s = getItem(position);
-              Picasso.with(getActivity())
-                        .load(s)
-                        .placeholder(R.raw.placeholder)
-                        .into(imageView);
+            String s = getItem(position);
+            Picasso.with(getActivity())
+                    .load(s)
+                    .placeholder(R.raw.placeholder)
+                    .into(imageView);
             return imageView;
 
         }
@@ -212,10 +215,7 @@ public class FragmentMovie extends Fragment {
 
     public class FetchMovieTask extends AsyncTask<String, Void, String> {
         private final String LOG_TAG = FetchMovieTask.class.getSimpleName();
-        private boolean sortChange = false; //cant use bool here, dont know why, and this is a flag to show if the sort type changed, if so, the adapter will go to the beginning
-        /* The date/time conversion code is going to be moved outside the asynctask later,
-+         * so for convenience we're breaking it out into its own method now.
-+         */
+        private boolean sortChange = false;
 
         private void UpdatemovieJSONObject(String JSONstr)
                 throws JSONException {
@@ -228,7 +228,7 @@ public class FragmentMovie extends Fragment {
 
                 JSONArray jsonarray = new JSONObject(JSONstr).getJSONArray(js_RESULT);
 
-                if(movieJSONObject == null) {             //if app just start or request a new sort method, movieJSONObject will be initial
+                /*if(movieJSONObject == null) {             //if app just start or request a new sort method, movieJSONObject will be initial
                     moviePerPage = jsonarray.length();
                     movieJSONObject = new JSONObject[jsonarray.length()];
                     for (int i = 0; i < jsonarray.length(); i++)
@@ -244,7 +244,7 @@ public class FragmentMovie extends Fragment {
                     }
                     for (int i = 0; i < jsonarray.length(); i++)       //assign new data to movieJSONObject
                         movieJSONObject[i+original_length] = jsonarray.getJSONObject(i);
-                }
+                }*/
             } catch (JSONException e) {
                 Log.e(LOG_TAG, "Error ", e);
             }
@@ -255,6 +255,7 @@ public class FragmentMovie extends Fragment {
 
         @Override
         protected String doInBackground(String[] params) {
+
            Log.v(LOG_TAG,"PARAMS LENGTH "+params.length);
             if (params.length == 0) {
                 return null;
@@ -334,12 +335,13 @@ public class FragmentMovie extends Fragment {
                     }
                 }
             }
-           if(params[1]=="1")  //if request the first page of sorting, it means we need to initial movieJSONObject
+            if(params[1]=="1")  //if request the first page of sorting, it means we need to initial movieJSONObject
                 movieJSONObject = null;
             return MovieJsonStr;
+
         }
 
-           //this is going to happen after the JSON data obtained.
+        //this is going to happen after the JSON data obtained.
         @Override
         protected void onPostExecute(String result) {
             Log.v(LOG_TAG, "JSON results" + result);
